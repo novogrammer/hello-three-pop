@@ -3,6 +3,10 @@ import { getElementSize } from './dom_utils';
 import './style.scss'
 
 import * as THREE from "three/webgpu";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
+
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
   const element = document.querySelector<Type>(query);
@@ -18,8 +22,10 @@ async function mainAsync(){
   const {width,height}=getElementSize(backgroundElement);
 
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
   const camera = new THREE.PerspectiveCamera( 30, width / height, 0.1, 1000 );
-  camera.position.set(0,0,5);
+  camera.position.set(10,10,10);
+  camera.lookAt(0,0,0);
 
   {
     const ambientLight=new THREE.AmbientLight(0xffffff,2);
@@ -27,7 +33,15 @@ async function mainAsync(){
   }
   {
     const directionalLight=new THREE.DirectionalLight(0xffffff,1);
-    directionalLight.position.set(10,10,10);
+    directionalLight.castShadow=true;
+    directionalLight.shadow.camera.top=30;
+    directionalLight.shadow.camera.bottom=-30;
+    directionalLight.shadow.camera.left=-30;
+    directionalLight.shadow.camera.right=30;
+    directionalLight.shadow.bias = -0.001;
+    // directionalLight.shadow.normalBias = 0.1;
+    
+    directionalLight.position.set(5,10,5);
     scene.add(directionalLight);
   }
 
@@ -38,6 +52,8 @@ async function mainAsync(){
   });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize( width, height );
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   await renderer.init();
   // const isWebGPUBackend = !!((renderer.backend as any)?.isWebGPUBackend);
   // if(!isWebGPUBackend){
@@ -56,10 +72,37 @@ async function mainAsync(){
   document.body.appendChild( stats.dom );
 
 
-  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  const material = new THREE.MeshStandardNodeMaterial();
-  const mesh = new THREE.Mesh(geometry,material);
-  scene.add(mesh);
+  // {
+  //   const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  //   const material = new THREE.MeshStandardNodeMaterial();
+  //   const mesh = new THREE.Mesh(geometry,material);
+  //   scene.add(mesh);
+  // }
+  {
+
+    const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath( 'assets/libs/draco/gltf/' );
+    loader.setDRACOLoader(dracoLoader);
+
+    const ktx2Loader = new KTX2Loader();
+    ktx2Loader.setTranscoderPath( 'assets/libs/basis/' );
+    ktx2Loader.detectSupport(renderer);
+    loader.setKTX2Loader(ktx2Loader);
+    // const gltf = await loader.loadAsync("assets/model/SceneMerged.glb");
+    // const gltf = await loader.loadAsync("assets/model/SceneMerged-etc1s.glb");
+    const gltf = await loader.loadAsync("assets/model/SceneMerged-etc1s-draco.glb");
+    gltf.scene.traverse((object3d)=>{
+      if(object3d instanceof THREE.Mesh){
+        const mesh = object3d;
+        mesh.castShadow=true;
+        mesh.receiveShadow=true;
+      }
+    })
+    scene.add(gltf.scene);
+
+  }
+
 
 
 
