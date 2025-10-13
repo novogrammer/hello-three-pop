@@ -105,9 +105,7 @@ async function mainAsync(){
     } );
     boxBorder = new LineSegments2( lineSegmentsGeometry, matLine );
 
-    // TODO: 親子関係にした方が良さそう。
-    boxBorder.position.y=4;
-    scene.add(boxBorder);
+    box.add(boxBorder);
   }
   {
 
