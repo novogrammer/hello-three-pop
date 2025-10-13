@@ -7,8 +7,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Wireframe } from 'three/addons/lines/webgpu/Wireframe.js';
-import { WireframeGeometry2 } from 'three/addons/lines/WireframeGeometry2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -81,7 +81,7 @@ async function mainAsync(){
   controls.autoRotate = true;
 
   let box:THREE.Mesh;
-  let boxBorder:Wireframe;
+  let boxBorder:LineSegments2;
   {
     const geometry = new THREE.BoxGeometry( 1, 1, 1 );
     const material = new THREE.MeshStandardNodeMaterial();
@@ -91,17 +91,19 @@ async function mainAsync(){
     box.receiveShadow=true;
     scene.add(box);
 
-    const wireframeGeometry = new WireframeGeometry2( geometry );
+    const edges = new THREE.EdgesGeometry( geometry );
+    const lineSegmentsGeometry = new LineSegmentsGeometry();
+    lineSegmentsGeometry.fromEdgesGeometry(edges);
     const matLine = new THREE.Line2NodeMaterial( {
 
       color: 0x4080ff,
-      linewidth: 5, // in world units with size attenuation, pixels otherwise
+      linewidth: 10, // in world units with size attenuation, pixels otherwise
       dashed: false,
       polygonOffset:true,
-      polygonOffsetFactor:-5,
+      polygonOffsetFactor:-10,
       polygonOffsetUnits:1,
     } );
-    boxBorder = new Wireframe( wireframeGeometry, matLine );
+    boxBorder = new LineSegments2( lineSegmentsGeometry, matLine );
 
     // TODO: 親子関係にした方が良さそう。
     boxBorder.position.y=4;
