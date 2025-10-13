@@ -6,6 +6,7 @@ import * as THREE from "three/webgpu";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -31,15 +32,16 @@ async function mainAsync(){
     const ambientLight=new THREE.AmbientLight(0xffffff,2);
     scene.add(ambientLight);
   }
+  let directionalLight:THREE.DirectionalLight;
   {
-    const directionalLight=new THREE.DirectionalLight(0xffffff,1);
+    directionalLight=new THREE.DirectionalLight(0xffffff,1);
     directionalLight.castShadow=true;
     directionalLight.shadow.camera.top=30;
     directionalLight.shadow.camera.bottom=-30;
     directionalLight.shadow.camera.left=-30;
     directionalLight.shadow.camera.right=30;
     directionalLight.shadow.bias = -0.001;
-    // directionalLight.shadow.normalBias = 0.1;
+    directionalLight.shadow.normalBias = 0.01;
     
     directionalLight.position.set(5,10,5);
     scene.add(directionalLight);
@@ -49,6 +51,7 @@ async function mainAsync(){
 
   const renderer = new THREE.WebGPURenderer({
     antialias:true,
+    // forceWebGL:true,
   });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize( width, height );
@@ -71,6 +74,9 @@ async function mainAsync(){
   stats.dom.style.top="0px";
   document.body.appendChild( stats.dom );
 
+  const controls = new OrbitControls( camera, renderer.domElement );
+  // controls.listenToKeyEvents( window ); // optional
+  controls.autoRotate = true;
 
   // {
   //   const geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -114,6 +120,10 @@ async function mainAsync(){
       return;
     }
     isComputing=true;
+    const time = performance.now() / 1000;
+    controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+
+    directionalLight.position.x=Math.sin(time) * 10;
 
 
     await renderer.renderAsync( scene, camera );
