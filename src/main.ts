@@ -7,6 +7,8 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Wireframe } from 'three/addons/lines/webgpu/Wireframe.js';
+import { WireframeGeometry2 } from 'three/addons/lines/WireframeGeometry2.js';
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -78,12 +80,33 @@ async function mainAsync(){
   // controls.listenToKeyEvents( window ); // optional
   controls.autoRotate = true;
 
-  // {
-  //   const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  //   const material = new THREE.MeshStandardNodeMaterial();
-  //   const mesh = new THREE.Mesh(geometry,material);
-  //   scene.add(mesh);
-  // }
+  let box:THREE.Mesh;
+  let boxBorder:Wireframe;
+  {
+    const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+    const material = new THREE.MeshStandardNodeMaterial();
+    box = new THREE.Mesh(geometry,material);
+    box.position.y=4;
+    box.castShadow=true;
+    box.receiveShadow=true;
+    scene.add(box);
+
+    const wireframeGeometry = new WireframeGeometry2( geometry );
+    const matLine = new THREE.Line2NodeMaterial( {
+
+      color: 0x4080ff,
+      linewidth: 5, // in world units with size attenuation, pixels otherwise
+      dashed: false,
+      polygonOffset:true,
+      polygonOffsetFactor:-5,
+      polygonOffsetUnits:1,
+    } );
+    boxBorder = new Wireframe( wireframeGeometry, matLine );
+
+    // TODO: 親子関係にした方が良さそう。
+    boxBorder.position.y=4;
+    scene.add(boxBorder);
+  }
   {
 
     const loader = new GLTFLoader();
