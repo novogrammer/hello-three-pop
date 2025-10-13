@@ -91,7 +91,7 @@ async function mainAsync(){
     box.receiveShadow=true;
     scene.add(box);
 
-    const edges = new THREE.EdgesGeometry( geometry );
+    const edges = new THREE.EdgesGeometry( geometry, 10 );
     const lineSegmentsGeometry = new LineSegmentsGeometry();
     lineSegmentsGeometry.fromEdgesGeometry(edges);
     const matLine = new THREE.Line2NodeMaterial( {
