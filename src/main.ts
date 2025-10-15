@@ -9,7 +9,7 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
-import { pass, vec3 } from "three/tsl";
+import { pass, vec3, length, normalView, output, mrt } from "three/tsl";
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -183,10 +183,21 @@ async function mainAsync(){
     directionalLight.position.x=Math.sin(time) * 10;
 
     const scenePass = pass(scene,camera);
+    // Capture both color (output) and view-space normals for edge detection.
+    scenePass.setMRT( mrt( {
+      output,
+      normal: normalView
+    } ) );
+    const outputNode = scenePass.getTextureNode("output");
+
     const scenePassViewZ = scenePass.getViewZNode();
     const depthGradient = scenePassViewZ.dFdx().abs().add( scenePassViewZ.dFdy().abs() );
-    const depthEdges = depthGradient.mul(1).saturate();
-    postProcessing.outputNode = vec3( depthEdges );
+    const depthEdges = depthGradient.mul(2).saturate();
+    const normalSample = scenePass.getTextureNode( 'normal' ).xyz;
+    const normalGradient = length( normalSample.dFdx() ).add( length( normalSample.dFdy() ) );
+    const normalEdges = normalGradient.mul(1).saturate();
+    const combinedEdges = depthEdges.add( normalEdges ).saturate();
+    postProcessing.outputNode = vec3( outputNode.mul(combinedEdges.oneMinus()) );
 
     postProcessing.render();
     renderer.resolveTimestampsAsync( THREE.TimestampQuery.RENDER );
