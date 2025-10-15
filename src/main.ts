@@ -120,14 +120,35 @@ async function mainAsync(){
     loader.setKTX2Loader(ktx2Loader);
     // const gltf = await loader.loadAsync("assets/model/SceneMerged.glb");
     // const gltf = await loader.loadAsync("assets/model/SceneMerged-etc1s.glb");
+    const toAddList:[THREE.Mesh,LineSegments2][]=[];
     const gltf = await loader.loadAsync("assets/model/SceneMerged-etc1s-draco.glb");
     gltf.scene.traverse((object3d)=>{
       if(object3d instanceof THREE.Mesh){
         const mesh = object3d;
         mesh.castShadow=true;
         mesh.receiveShadow=true;
+        {
+          const edges = new THREE.EdgesGeometry( mesh.geometry, 15 );
+          const lineSegmentsGeometry = new LineSegmentsGeometry();
+          lineSegmentsGeometry.fromEdgesGeometry(edges);
+          const matLine = new THREE.Line2NodeMaterial( {
+
+            color: 0x000000,
+            linewidth: 10, // in world units with size attenuation, pixels otherwise
+            dashed: false,
+            polygonOffset:true,
+            polygonOffsetFactor:-10,
+            polygonOffsetUnits:1,
+          } );
+          const border = new LineSegments2( lineSegmentsGeometry, matLine );
+          toAddList.push([mesh,border]);
+        }
       }
     })
+    for(const toAdd of toAddList){
+      const [mesh,border]=toAdd;
+      mesh.add(border);
+    }
     scene.add(gltf.scene);
 
   }
