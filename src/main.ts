@@ -153,6 +153,15 @@ async function mainAsync(){
 
   }
 
+  window.addEventListener("resize",()=>{
+    const {width,height}=getElementSize(backgroundElement);
+    renderer.setSize(width,height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    camera.aspect=width/height;
+    camera.updateProjectionMatrix();
+    console.log("resized");
+
+  })
 
 
 
