@@ -9,7 +9,7 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
-import { pass } from "three/tsl";
+import { pass, vec3 } from "three/tsl";
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -183,9 +183,10 @@ async function mainAsync(){
     directionalLight.position.x=Math.sin(time) * 10;
 
     const scenePass = pass(scene,camera);
-    // const scenePassViewZ = scenePass.getViewZNode();
-    postProcessing.outputNode = scenePass.getTextureNode();
-    // postProcessing.outputNode = vec3(scenePassViewZ.sub(15).abs().mul(0.01));
+    const scenePassViewZ = scenePass.getViewZNode();
+    const depthGradient = scenePassViewZ.dFdx().abs().add( scenePassViewZ.dFdy().abs() );
+    const depthEdges = depthGradient.mul(1).saturate();
+    postProcessing.outputNode = vec3( depthEdges );
 
     postProcessing.render();
     renderer.resolveTimestampsAsync( THREE.TimestampQuery.RENDER );
