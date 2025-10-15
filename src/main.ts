@@ -9,6 +9,7 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
+import { pass } from "three/tsl";
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -75,6 +76,9 @@ async function mainAsync(){
   stats.init( renderer );
   stats.dom.style.top="0px";
   document.body.appendChild( stats.dom );
+
+  const postProcessing = new THREE.PostProcessing( renderer );
+  postProcessing.outputColorTransform = true;
 
   const controls = new OrbitControls( camera, renderer.domElement );
   // controls.listenToKeyEvents( window ); // optional
@@ -145,10 +149,10 @@ async function mainAsync(){
         }
       }
     })
-    for(const toAdd of toAddList){
-      const [mesh,border]=toAdd;
-      mesh.add(border);
-    }
+    // for(const toAdd of toAddList){
+    //   const [mesh,border]=toAdd;
+    //   mesh.add(border);
+    // }
     scene.add(gltf.scene);
 
   }
@@ -178,8 +182,12 @@ async function mainAsync(){
 
     directionalLight.position.x=Math.sin(time) * 10;
 
+    const scenePass = pass(scene,camera);
+    // const scenePassViewZ = scenePass.getViewZNode();
+    postProcessing.outputNode = scenePass.getTextureNode();
+    // postProcessing.outputNode = vec3(scenePassViewZ.sub(15).abs().mul(0.01));
 
-    await renderer.renderAsync( scene, camera );
+    postProcessing.render();
     renderer.resolveTimestampsAsync( THREE.TimestampQuery.RENDER );
     stats.update();
     isComputing=false;
