@@ -125,7 +125,7 @@ const processLayer=Fn(([textureNode,rotationDeg, mask]:[any,any,any])=>{
   const sampler = (uv: any) => texture(textureNode, uv).rgb;
 
   const gridSizeMin = 2;
-  const gridSizeMaxDivisor = 8;
+  const gridSizeMaxDivisor = 32;
   const gridSizeOscillationSpeed = 0.5;
 
   const coord = screenCoordinate;
@@ -186,13 +186,12 @@ const processLayer=Fn(([textureNode,rotationDeg, mask]:[any,any,any])=>{
 export function createHalftoneColorNode(textureNode:any) {
   return Fn(()=>{
 
-    const l=DEFAULT_LAYERS;
-    const c = processLayer(textureNode,l[0].rotationDeg, l[0].mask);
-    const m = processLayer(textureNode,l[1].rotationDeg, l[1].mask);
-    const y = processLayer(textureNode,l[2].rotationDeg, l[2].mask);
-    const k = processLayer(textureNode,l[3].rotationDeg, l[3].mask);
+    const cmykTotal = vec4(0).toVar();
+    for(const layer of DEFAULT_LAYERS){
+      const cmyk = processLayer(textureNode,layer.rotationDeg, layer.mask);
+      cmykTotal.addAssign(cmyk);
 
-    const cmykTotal = vec4(0).add(c).add(m).add(y).add(k);
+    }
 
     return cmykToRgbNode(cmykTotal);
   })();
