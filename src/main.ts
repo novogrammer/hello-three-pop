@@ -160,6 +160,20 @@ async function mainAsync(){
   })
 
 
+  const scenePass = pass(scene,camera);
+  // Capture both color (output) and view-space normals for edge detection.
+  scenePass.setMRT( mrt( {
+    output,
+    normal: normalView
+  } ) );
+  const outputNode = scenePass.getTextureNode("output");
+
+  const vignetteColor=vec4(0,0,0,1);
+  const d = screenUV.sub(0.5).length();
+  const vignetteDistance = (d.mul(1.4).pow(3));
+
+  postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
+
 
   let isComputing=false;
   renderer.setAnimationLoop( animate );
@@ -173,20 +187,6 @@ async function mainAsync(){
     controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
     directionalLight.position.x=Math.sin(time) * 10;
-
-    const scenePass = pass(scene,camera);
-    // Capture both color (output) and view-space normals for edge detection.
-    scenePass.setMRT( mrt( {
-      output,
-      normal: normalView
-    } ) );
-    const outputNode = scenePass.getTextureNode("output");
-
-    const vignetteColor=vec4(0,0,0,1);
-    const d = screenUV.sub(0.5).length();
-    const vignetteDistance = (d.mul(1.4).pow(3));
-
-    postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
 
     postProcessing.render();
     renderer.resolveTimestampsAsync( THREE.TimestampQuery.RENDER );
