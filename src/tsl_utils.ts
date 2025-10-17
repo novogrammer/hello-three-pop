@@ -5,7 +5,7 @@ interface FresnelOptions {
   power?: number;
 }
 
-export function createFresnelColor({
+export function createFresnelColorNode({
   tintColor = vec3(1, 1, 1).mul(0.5),
   power = 3,
 }: FresnelOptions = {}) {

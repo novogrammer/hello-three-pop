@@ -10,7 +10,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
 import { pass, normalView, output, mrt, screenUV, vec4, mix } from "three/tsl";
-import { createFresnelColor } from "./tsl_utils";
+import { createFresnelColorNode } from "./tsl_utils";
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -136,7 +136,7 @@ async function mainAsync(){
             material.color = materialSrc.color;
             material.roughness = materialSrc.roughness;
             material.metalness = materialSrc.metalness;
-            const fresnelColor = createFresnelColor();
+            const fresnelColor = createFresnelColorNode();
             material.outputNode = output.add(fresnelColor);
             mesh.material = material;
           }
