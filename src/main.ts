@@ -186,7 +186,7 @@ async function mainAsync(){
     const d = screenUV.sub(0.5).length();
     const vignetteDistance = (d.mul(1.4).pow(3));
 
-    postProcessing.outputNode = mix(vec4(outputNode),vignetteColor,vignetteDistance);
+    postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
 
     postProcessing.render();
     renderer.resolveTimestampsAsync( THREE.TimestampQuery.RENDER );
