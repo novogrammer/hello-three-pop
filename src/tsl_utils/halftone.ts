@@ -22,6 +22,7 @@ import {
   screenSize,
   Fn,
   screenCoordinate,
+  If,
 } from "three/tsl";
 
 
@@ -183,17 +184,21 @@ const processLayer=Fn(([textureNode,rotationDeg, mask]:[any,any,any])=>{
 });
 
 
-export function createHalftoneColorNode(textureNode:any) {
+export function createHalftoneColorNode(textureNode:any,uEnableHalftone:any) {
   return Fn(()=>{
+    const rgb = vec3(textureNode).toVar();
+    If(uEnableHalftone.notEqual(0),()=>{
 
-    const cmykTotal = vec4(0).toVar();
-    for(const layer of DEFAULT_LAYERS){
-      const cmyk = processLayer(textureNode,layer.rotationDeg, layer.mask);
-      cmykTotal.addAssign(cmyk);
+      const cmykTotal = vec4(0).toVar();
+      for(const layer of DEFAULT_LAYERS){
+        const cmyk = processLayer(textureNode,layer.rotationDeg, layer.mask);
+        cmykTotal.addAssign(cmyk);
 
-    }
+      }
 
-    return cmykToRgbNode(cmykTotal);
+      rgb.assign(cmykToRgbNode(cmykTotal));
+    });
+    return rgb;
   })();
 
 }

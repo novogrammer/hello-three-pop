@@ -1,4 +1,5 @@
 import Stats from "stats-gl";
+import GUI from 'lil-gui';
 import { getElementSize } from './dom_utils';
 import './style.scss'
 
@@ -9,7 +10,7 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
-import { pass, normalView, output, mrt} from "three/tsl";
+import { pass, normalView, output, mrt, uniform} from "three/tsl";
 import { createFresnelColorNode } from "./tsl_utils/fresnel";
 import { createHalftoneColorNode } from "./tsl_utils/halftone";
 
@@ -23,6 +24,26 @@ function querySelector<Type extends HTMLElement>(query:string):Type{
 }
 
 async function mainAsync(){
+
+  const uEnableFresnel = uniform(0);
+  const uEnableHalftone = uniform(0);
+  
+  const params = {
+    enableFresnel: uEnableFresnel.value != 0,
+    enableHalftone: uEnableHalftone.value != 0,
+  };
+  const gui = new GUI({
+  });
+  const cEnableFresnel = gui.add(params,"enableFresnel");
+  cEnableFresnel.onChange(()=>{
+    uEnableFresnel.value = params.enableFresnel ? 1 : 0;
+  })
+
+  const cEnableHalftone = gui.add(params,"enableHalftone");
+  cEnableHalftone.onChange(()=>{
+    uEnableHalftone.value = params.enableHalftone ? 1 : 0;
+  });
+
   const backgroundElement=querySelector<HTMLElement>(".p-background");
 
   const {width,height}=getElementSize(backgroundElement);
@@ -137,7 +158,7 @@ async function mainAsync(){
             material.color = materialSrc.color;
             material.roughness = materialSrc.roughness;
             material.metalness = materialSrc.metalness;
-            const fresnelColor = createFresnelColorNode();
+            const fresnelColor = createFresnelColorNode().mul(uEnableFresnel);
             material.outputNode = output.add(fresnelColor);
             mesh.material = material;
           }
@@ -174,7 +195,7 @@ async function mainAsync(){
   // const vignetteDistance = (d.mul(1.4).pow(3));
 
   // postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
-  const halftoneColorNode = createHalftoneColorNode(outputNode);
+  const halftoneColorNode = createHalftoneColorNode(outputNode,uEnableHalftone);
   postProcessing.outputNode = halftoneColorNode;
 
 
