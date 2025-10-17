@@ -9,8 +9,9 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
-import { pass, normalView, output, mrt, screenUV, vec4, mix } from "three/tsl";
+import { pass, normalView, output, mrt} from "three/tsl";
 import { createFresnelColorNode } from "./tsl_utils/fresnel";
+import { createHalftoneColorNode } from "./tsl_utils/halftone";
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -168,11 +169,13 @@ async function mainAsync(){
   } ) );
   const outputNode = scenePass.getTextureNode("output");
 
-  const vignetteColor=vec4(0,0,0,1);
-  const d = screenUV.sub(0.5).length();
-  const vignetteDistance = (d.mul(1.4).pow(3));
+  // const vignetteColor=vec4(0,0,0,1);
+  // const d = screenUV.sub(0.5).length();
+  // const vignetteDistance = (d.mul(1.4).pow(3));
 
-  postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
+  // postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
+  const halftoneColorNode = createHalftoneColorNode(outputNode);
+  postProcessing.outputNode = halftoneColorNode;
 
 
   let isComputing=false;
