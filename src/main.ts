@@ -9,7 +9,7 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
-import { pass, vec3, length, normalView, output, mrt } from "three/tsl";
+import { pass, normalView, output, mrt, screenUV, vec4, mix } from "three/tsl";
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -190,14 +190,11 @@ async function mainAsync(){
     } ) );
     const outputNode = scenePass.getTextureNode("output");
 
-    const scenePassViewZ = scenePass.getViewZNode();
-    const depthGradient = scenePassViewZ.dFdx().abs().add( scenePassViewZ.dFdy().abs() );
-    const depthEdges = depthGradient.mul(2).saturate();
-    const normalSample = scenePass.getTextureNode( 'normal' ).xyz;
-    const normalGradient = length( normalSample.dFdx() ).add( length( normalSample.dFdy() ) );
-    const normalEdges = normalGradient.mul(1).saturate();
-    const combinedEdges = depthEdges.add( normalEdges ).saturate();
-    postProcessing.outputNode = vec3( outputNode.mul(combinedEdges.oneMinus()) );
+    const vignetteColor=vec4(0,0,0,1);
+    const d = screenUV.sub(0.5).length();
+    const vignetteDistance = (d.mul(1.4).pow(3));
+
+    postProcessing.outputNode = mix(vec4(outputNode),vignetteColor,vignetteDistance);
 
     postProcessing.render();
     renderer.resolveTimestampsAsync( THREE.TimestampQuery.RENDER );
