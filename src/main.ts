@@ -9,7 +9,7 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
-import { pass, normalView, output, mrt, screenUV, vec4, mix } from "three/tsl";
+import { pass, normalView, output, mrt, screenUV, vec4, mix, vec3 } from "three/tsl";
 
 
 function querySelector<Type extends HTMLElement>(query:string):Type{
@@ -124,35 +124,28 @@ async function mainAsync(){
     loader.setKTX2Loader(ktx2Loader);
     // const gltf = await loader.loadAsync("assets/model/SceneMerged.glb");
     // const gltf = await loader.loadAsync("assets/model/SceneMerged-etc1s.glb");
-    const toAddList:[THREE.Mesh,LineSegments2][]=[];
     const gltf = await loader.loadAsync("assets/model/SceneMerged-etc1s-draco.glb");
     gltf.scene.traverse((object3d)=>{
       if(object3d instanceof THREE.Mesh){
         const mesh = object3d;
+        {
+          const materialSrc = mesh.material;
+          if(materialSrc instanceof THREE.MeshStandardMaterial){
+            const material = new THREE.MeshStandardNodeMaterial();
+            material.color = materialSrc.color;
+            material.roughness = materialSrc.roughness;
+            material.metalness = materialSrc.metalness;
+            const viewDirection = vec3(0,0,-1);
+            const fresnel = normalView.dot(viewDirection).abs().oneMinus().pow(3);
+            const fresnelColor = vec3(1,1,1).mul(0.5).mul(fresnel);
+            material.outputNode = output.add(fresnelColor);
+            mesh.material = material;
+          }
+        }
         mesh.castShadow=true;
         mesh.receiveShadow=true;
-        {
-          const edges = new THREE.EdgesGeometry( mesh.geometry, 15 );
-          const lineSegmentsGeometry = new LineSegmentsGeometry();
-          lineSegmentsGeometry.fromEdgesGeometry(edges);
-          const matLine = new THREE.Line2NodeMaterial( {
-
-            color: 0x000000,
-            linewidth: 10, // in world units with size attenuation, pixels otherwise
-            dashed: false,
-            polygonOffset:true,
-            polygonOffsetFactor:-10,
-            polygonOffsetUnits:1,
-          } );
-          const border = new LineSegments2( lineSegmentsGeometry, matLine );
-          toAddList.push([mesh,border]);
-        }
       }
     })
-    // for(const toAdd of toAddList){
-    //   const [mesh,border]=toAdd;
-    //   mesh.add(border);
-    // }
     scene.add(gltf.scene);
 
   }
