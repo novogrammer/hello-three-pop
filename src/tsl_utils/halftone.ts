@@ -35,8 +35,6 @@ const DEFAULT_LAYERS = [
 const EPSILON = 1e-6;
 
 const rgbToCmykNode=Fn(([rgb]: [any]) => {
-  const one = float(1);
-  const zero = float(0);
   const epsilonNode = float(EPSILON);
 
   const r = rgb.x;
@@ -45,31 +43,30 @@ const rgbToCmykNode=Fn(([rgb]: [any]) => {
 
   const maxGB = max(g, b);
   const maxRGB = max(r, maxGB);
-  const k = one.sub(maxRGB);
+  const k = maxRGB.oneMinus();
 
   const safeDenom = max(maxRGB, epsilonNode);
   const c = maxRGB.sub(r).div(safeDenom);
   const m = maxRGB.sub(g).div(safeDenom);
   const y = maxRGB.sub(b).div(safeDenom);
 
-  const cmy = vec3(c, m, y).clamp(zero, one);
+  const cmy = vec3(c, m, y).clamp();
   const result = vec4(cmy, k);
-  const blackMask = step(one.sub(epsilonNode), k);
+  const blackMask = step(epsilonNode.oneMinus(), k);
   return mix(result, vec4(0, 0, 0, 1), blackMask);
 });
 
 const cmykToRgbNode=Fn(([cmyk]: [any]) => {
-  const one = float(1);
 
   const c = cmyk.x;
   const m = cmyk.y;
   const y = cmyk.z;
   const k = cmyk.w;
 
-  const oneMinusK = one.sub(k);
-  const r = one.sub(c).mul(oneMinusK);
-  const g = one.sub(m).mul(oneMinusK);
-  const b = one.sub(y).mul(oneMinusK);
+  const oneMinusK = k.oneMinus();
+  const r = c.oneMinus().mul(oneMinusK);
+  const g = m.oneMinus().mul(oneMinusK);
+  const b = y.oneMinus().mul(oneMinusK);
 
   return vec3(r, g, b);
 });
@@ -77,26 +74,21 @@ const cmykToRgbNode=Fn(([cmyk]: [any]) => {
 const rotationMatrixNode = Fn(([angle]: [any])=>{
   const c = cos(angle);
   const s = sin(angle);
-  const zero = float(0);
-  const one = float(1);
 
   return mat3(
     // @ts-ignore
-    c, s, zero,
-    s.mul(-1), c, zero,
-    zero, zero, one
+    c, s, 0,
+    s.mul(-1), c, 0,
+    0, 0, 1
   );
 });
 
 const translationMatrixNode = Fn(([translation]: [any]) => {
-  const zero = float(0);
-  const one = float(1);
-
   return mat3(
-  // @ts-ignore
-    one, zero, zero,
-    zero, one, zero,
-    translation.x, translation.y, one
+    // @ts-ignore
+    1, 0, 0,
+    0, 1, 0,
+    translation.x, translation.y, 1
   );
 });
 
@@ -141,16 +133,15 @@ const processLayer=Fn(([textureNode,rotationDeg, mask,uGridSize,uRotationDeg]:[a
   const transformMatrix = rotationMatrix.mul(translationMatrixNode(translation));
   const inverseTransformMatrix = translationMatrixNode(translation.mul(-1)).mul(inverseRotationMatrix);
   
-  const fragCoordVec3 = vec3(coord.x, coord.y, 1);
-  const transformedCoord = transformMatrix.mul(fragCoordVec3).xy;
+  const transformedCoord = transformMatrix.mul(vec3(coord, 1)).xy;
 
   const gvid = coordToHexCoordsNode(transformedCoord, gridSize);
   const gv=gvid.xy;
   const id=gvid.zw;
 
 
-  const gridCoord = inverseRotationMatrix.mul(vec3(gv.x, gv.y, 1)).xy;
-  const hexCenterCoord = inverseTransformMatrix.mul(vec3(id.x, id.y, 1)).xy;
+  const gridCoord = inverseRotationMatrix.mul(vec3(gv, 1)).xy;
+  const hexCenterCoord = inverseTransformMatrix.mul(vec3(id, 1)).xy;
   const uv = hexCenterCoord.div(resolution);
 
   const sampledColor = sampler(uv);
