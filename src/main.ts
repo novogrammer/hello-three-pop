@@ -31,6 +31,7 @@ async function mainAsync(){
   const params = {
     enableFresnel: uEnableFresnel.value != 0,
     enableHalftone: uEnableHalftone.value != 0,
+    blendmode: "normal",
   };
   const gui = new GUI({
   });
@@ -43,6 +44,14 @@ async function mainAsync(){
   cEnableHalftone.onChange(()=>{
     uEnableHalftone.value = params.enableHalftone ? 1 : 0;
   });
+  const cBlendMode = gui.add(params,"blendmode",["normal","multiply"]);
+  cBlendMode.onChange(()=>{
+    const canvasElement = document.querySelector<HTMLCanvasElement>(".p-background__canvas");
+    if(canvasElement){
+      canvasElement.style.mixBlendMode=params.blendmode;
+    }
+  });
+
 
   const backgroundElement=querySelector<HTMLElement>(".p-background");
 
