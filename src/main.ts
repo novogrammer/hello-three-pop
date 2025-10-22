@@ -204,7 +204,9 @@ async function mainAsync(){
   // const vignetteDistance = (d.mul(1.4).pow(3));
 
   // postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
-  const halftoneColorNode = createHalftoneColorNode(outputNode,uEnableHalftone);
+  const uGridSize = uniform(16);
+  const uRotationDeg = uniform(0);
+  const halftoneColorNode = createHalftoneColorNode(outputNode,uEnableHalftone,uGridSize,uRotationDeg);
   postProcessing.outputNode = halftoneColorNode;
 
 

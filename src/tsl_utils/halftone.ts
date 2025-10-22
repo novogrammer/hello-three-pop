@@ -6,7 +6,6 @@ import {
   length,
   mat3,
   max,
-  min,
   mix,
   mod,
   radians,
@@ -14,7 +13,6 @@ import {
   smoothstep,
   step,
   texture,
-  time as timeNode,
   vec2,
   vec3,
   vec4,
@@ -121,35 +119,24 @@ const coordToHexCoordsNode = Fn(([coord,height]: [any,any]) => {
   return vec4( gv, id );
 });
 
-const processLayer=Fn(([textureNode,rotationDeg, mask]:[any,any,any])=>{
+const processLayer=Fn(([textureNode,rotationDeg, mask,uGridSize,uRotationDeg]:[any,any,any,any,any])=>{
 
   const sampler = (uv: any) => texture(textureNode, uv).rgb;
 
-  const gridSizeMin = 2;
-  const gridSizeMaxDivisor = 32;
-  const gridSizeOscillationSpeed = 0.5;
-
   const coord = screenCoordinate;
   const resolution = screenSize;
-  const timeValue = timeNode;
-  const rotationSpeed = float(0.1);
 
   const half = float(0.5);
 
-  const sizeMinNode = float(gridSizeMin);
-  const sizeMaxNode = min(resolution.x, resolution.y).div(float(gridSizeMaxDivisor));
-  const sizeRange = sizeMaxNode.sub(sizeMinNode);
-
-  const gridOscillation = sin(timeValue.mul(gridSizeOscillationSpeed)).mul(half).add(half);
-  const gridSize = gridOscillation.mul(sizeRange).add(sizeMinNode);
+  const gridSize = uGridSize;
 
   const translation = resolution.mul(float(-0.5));
 
   const rotationBase = radians(rotationDeg);
-  const rotation = rotationBase.add(timeValue.mul(rotationSpeed));
+  const rotationTotal = rotationBase.add(radians(uRotationDeg));
 
-  const rotationMatrix = rotationMatrixNode(rotation);
-  const inverseRotationMatrix = rotationMatrixNode(rotation.mul(-1));
+  const rotationMatrix = rotationMatrixNode(rotationTotal);
+  const inverseRotationMatrix = rotationMatrixNode(rotationTotal.mul(-1));
 
   const transformMatrix = rotationMatrix.mul(translationMatrixNode(translation));
   const inverseTransformMatrix = translationMatrixNode(translation.mul(-1)).mul(inverseRotationMatrix);
@@ -184,14 +171,14 @@ const processLayer=Fn(([textureNode,rotationDeg, mask]:[any,any,any])=>{
 });
 
 
-export function createHalftoneColorNode(textureNode:any,uEnableHalftone:any) {
+export function createHalftoneColorNode(textureNode:any,uEnableHalftone:any,uGridSize:any,uRotationDeg:any) {
   return Fn(()=>{
     const rgb = vec3(textureNode).toVar();
     If(uEnableHalftone.notEqual(0),()=>{
 
       const cmykTotal = vec4(0).toVar();
       for(const layer of DEFAULT_LAYERS){
-        const cmyk = processLayer(textureNode,layer.rotationDeg, layer.mask);
+        const cmyk = processLayer(textureNode,layer.rotationDeg, layer.mask,uGridSize,uRotationDeg);
         cmykTotal.addAssign(cmyk);
 
       }
