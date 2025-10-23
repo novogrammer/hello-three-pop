@@ -27,10 +27,16 @@ async function mainAsync(){
 
   const uEnableFresnel = uniform(0);
   const uEnableHalftone = uniform(0);
+  const uGridSize = uniform(16);
+  const uRotationDeg = uniform(0);
   
   const params = {
     enableFresnel: uEnableFresnel.value != 0,
-    enableHalftone: uEnableHalftone.value != 0,
+    halftone: {
+      enabled:uEnableHalftone.value != 0,
+      gridSize:uGridSize.value,
+      rotationDeg:uRotationDeg.value,
+    },
     blendmode: "normal",
   };
   const gui = new GUI({
@@ -40,10 +46,22 @@ async function mainAsync(){
     uEnableFresnel.value = params.enableFresnel ? 1 : 0;
   })
 
-  const cEnableHalftone = gui.add(params,"enableHalftone");
+  const fHalftone = gui.addFolder("halftone");
+
+  const cEnableHalftone = fHalftone.add(params.halftone,"enabled");
   cEnableHalftone.onChange(()=>{
-    uEnableHalftone.value = params.enableHalftone ? 1 : 0;
+    uEnableHalftone.value = params.halftone.enabled ? 1 : 0;
   });
+  const cGridSize = fHalftone.add(params.halftone,"gridSize",1,200);
+  cGridSize.onChange(()=>{
+    uGridSize.value = params.halftone.gridSize;
+  });
+  const cRotationDeg = fHalftone.add(params.halftone,"rotationDeg",0,360);
+  cRotationDeg.onChange(()=>{
+    uRotationDeg.value = params.halftone.rotationDeg;
+  });
+
+
   const cBlendMode = gui.add(params,"blendmode",["normal","multiply"]);
   cBlendMode.onChange(()=>{
     const canvasElement = document.querySelector<HTMLCanvasElement>(".p-background__canvas");
@@ -204,8 +222,6 @@ async function mainAsync(){
   // const vignetteDistance = (d.mul(1.4).pow(3));
 
   // postProcessing.outputNode = mix(outputNode,vignetteColor,vignetteDistance);
-  const uGridSize = uniform(16);
-  const uRotationDeg = uniform(0);
   const halftoneColorNode = createHalftoneColorNode(outputNode,uEnableHalftone,uGridSize,uRotationDeg);
   postProcessing.outputNode = halftoneColorNode;
 
